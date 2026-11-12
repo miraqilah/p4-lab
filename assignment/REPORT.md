@@ -17,7 +17,11 @@ Write each section in your own words, about your own runs. Quote the evidence fi
      loop in this program? Check the code, and explain what happens when TTL reaches 0. -->
 
 ## 2. Design: the hop limit
-
+- field's size: 16 bits because it holds 0 to 65535, far more tha a 2-switch network needs. Then, since proto_id and dst_id has 16 bits i also wanted all the field in header to look uniform.
+- position: at the end of the tunnel header which is after bit<16> dst_id; so that the old field which is [ proto_id ][ dst_id ] stay in the same place. 
+- starting value: since the min value should be 2, i choose 10 so that it have some round of loop (expecting only 10 passes between the switches) before the packet drop. Then it also is not that long for 2 switches. 
+- where decremented: at each switch the packet reach, the decrement will happend in the ingress in the tunnel branch, before the myTunnel_exact lookup. This will check the current hop number. if number > 0 it will decrease by 1. if number = 0 the switch will drop the packet immediately. By doing this, the number wont be wrapping from 0 to 255 like IPv4 TTL before.
+- Other things that need to change: tunnel.p4 (header definition)=adding new field size in the header; after dst_id. tunnel.p4 (ingress)=the check for > 0, the drop, and the decrement. Then the hosts, send.py=write the starting number on the packet, default 10 and receive.py=print the hop limit that arrives so that they wonldn't disagree with the switches about the header length. Parser and deparser=no edit needed, because extract and emit use the whole header definition.
 <!-- Your header change and your pipeline change, and the reason for each choice:
      - the field's size, and where in the header you put it (and why there);
      - the starting value send.py uses, and how you chose it;
