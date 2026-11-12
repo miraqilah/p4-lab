@@ -40,6 +40,8 @@ Write each section in your own words, about your own runs. Quote the evidence fi
      the code itself: here, explain anything a reviewer might not see from the diff alone. -->
 
 ## 4. Evidence: it works
+- delivery.txt: thunnel packet that send via --tunnel 2 and --tunnel 3 reach h2 and h3 respectively. Then, hop limit = 8 (10-2[s1,s2]). Then ping IPv4 still works because of else if (hdr.ipv4.isValid()) branch in ingress.
+- loop-after.txt: the loop is ended after 10 passes and 1 arrival that dropped , which is 236-242=6 passes from s1 and 235-240=5 passes from s2. Therefore this result match the design as it has 10 passes and the last hop=0 is dropped
 
 <!-- Show, with your evidence files:
      - tunnelled delivery to h2 and h3, and the hop limit the receivers saw (delivery.txt);
