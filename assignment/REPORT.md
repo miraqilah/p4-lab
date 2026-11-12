@@ -51,6 +51,12 @@ Write each section in your own words, about your own runs. Quote the evidence fi
 
 ## 5. Evaluation
 
+a)THE PREDICTION
+- delivery: if using h1 python3 send.py... --tunnel 2... the delivery still happen meaning that packet form h1 will be send to h2 because both of the tunnel.p4 and tunnel_v1.p4 has applied tunnel header. Also, since s2 run the old program s2 will mistakenly parse byte 5 and 6 as the IPv4. Then IPv4 ping still works normally because it does not involded the tunnel header.
+- loop: s1 will do 10 passes and 1 arrival to drop since the s2 do not have instruction/code to reduce the hop limit and only check the tunnel id and forward it only.
+
+
+
 <!-- a) The mixed rollout (mixed.txt): what did you predict before running s1 with your new
         program and s2 with tunnel_v1.p4? What actually happened to delivery, and to the loop?
         Explain every difference from your prediction, byte by byte if you need to.
