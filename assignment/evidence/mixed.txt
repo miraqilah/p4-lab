@@ -1,0 +1,156 @@
+DELIVERY TO H2
+
+mininet> sh cat logs/h2.txt
+Listening on h2-eth0...
+mininet> h2 timeout 8 tcpdump -c 1 -XX -ni h2-eth0 ether proto 0x1212 > logs/h2cap.txt 2>&1 &
+[2] 95619
+mininet> h1 python3 send.py 10.80.0.3 "mixed" --tunnel 2
+###[ Ethernet ]### 
+  dst       = ff:ff:ff:ff:ff:ff
+  src       = 00:00:00:00:00:01
+  type      = 0x1212
+###[ MyTunnel ]### 
+     proto_id  = 2048
+     dst_id    = 2
+     hop_limit = 10
+###[ IP ]### 
+        version   = 4
+        ihl       = 5
+        tos       = 0x0
+        len       = 33
+        id        = 1
+        flags     = 
+        frag      = 0
+        ttl       = 64
+        proto     = udp
+        chksum    = 0x6628
+        src       = 10.80.0.1
+        dst       = 10.80.0.3
+        \options   \
+###[ UDP ]### 
+           sport     = 4321
+           dport     = 4321
+           len       = 13
+           chksum    = 0x7f9f
+###[ Raw ]### 
+              load      = 'mixed'
+
+Sent from h1-eth0.
+mininet> sh sleep 8; cat logs/h2cap.txt
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on h2-eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+
+0 packets captured
+0 packets received by filter
+0 packets dropped by kernel
+mininet> sh cat logs/h2.txt
+Listening on h2-eth0...
+
+
+
+s2’s view
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Processing packet received on port 1
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Parser 'parser': start
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Parser 'parser' entering state 'start'
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Extracting header 'ethernet'
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Parser state 'start': key is 1212
+[22:32:01.164] [bmv2] [T] [thread 94647] [0.0] [cxt 0] Bytes parsed: 14
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Parser 'parser' entering state 'parse_myTunnel'
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Extracting header 'myTunnel'
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Parser state 'parse_myTunnel': key is 0800
+[22:32:01.164] [bmv2] [T] [thread 94647] [0.0] [cxt 0] Bytes parsed: 18
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[22:32:01.164] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Extracting header 'ipv4'
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Parser state 'parse_ipv4' has no switch, going to default next state
+[22:32:01.165] [bmv2] [T] [thread 94647] [0.0] [cxt 0] Bytes parsed: 38
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Parser 'parser': end
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Pipeline 'ingress': start
+[22:32:01.165] [bmv2] [T] [thread 94647] [0.0] [cxt 0] tunnel_v1.p4(126) Condition "hdr.myTunnel.isValid()" (node_2) is true
+[22:32:01.165] [bmv2] [T] [thread 94647] [0.0] [cxt 0] Applying table 'MyIngress.myTunnel_exact'
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Looking up key:
+* hdr.myTunnel.dst_id : 0002
+
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Table 'MyIngress.myTunnel_exact': hit with handle 1
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Dumping entry 1
+Match key:
+* hdr.myTunnel.dst_id : EXACT     0002
+Action entry: MyIngress.myTunnel_forward - 2,
+
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Action entry is MyIngress.myTunnel_forward - 2,
+[22:32:01.165] [bmv2] [T] [thread 94647] [0.0] [cxt 0] Action MyIngress.myTunnel_forward
+[22:32:01.165] [bmv2] [T] [thread 94647] [0.0] [cxt 0] tunnel_v1.p4(115) Primitive standard_metadata.egress_spec = port
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Pipeline 'ingress': end
+[22:32:01.165] [bmv2] [D] [thread 94647] [0.0] [cxt 0] Egress port is 2
+[22:32:01.168] [bmv2] [D] [thread 94650] [0.0] [cxt 0] Pipeline 'egress': start
+[22:32:01.168] [bmv2] [D] [thread 94650] [0.0] [cxt 0] Pipeline 'egress': end
+[22:32:01.168] [bmv2] [D] [thread 94650] [0.0] [cxt 0] Deparser 'deparser': start
+[22:32:01.168] [bmv2] [D] [thread 94650] [0.0] [cxt 0] Updating checksum 'cksum'
+[22:32:01.168] [bmv2] [D] [thread 94650] [0.0] [cxt 0] Deparsing header 'ethernet'
+[22:32:01.168] [bmv2] [D] [thread 94650] [0.0] [cxt 0] Deparsing header 'myTunnel'
+[22:32:01.168] [bmv2] [D] [thread 94650] [0.0] [cxt 0] Deparsing header 'ipv4'
+[22:32:01.168] [bmv2] [D] [thread 94650] [0.0] [cxt 0] Deparser 'deparser': end
+[22:32:01.168] [bmv2] [D] [thread 94652] [0.0] [cxt 0] Transmitting packet of size 53 out of port 2
+
+
+
+PING
+mininet> h1 ping -c 2 h3
+PING 10.80.0.3 (10.80.0.3) 56(84) bytes of data.
+64 bytes from 10.80.0.3: icmp_seq=1 ttl=62 time=4.49 ms
+64 bytes from 10.80.0.3: icmp_seq=2 ttl=62 time=13.8 ms
+
+--- 10.80.0.3 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 4.489/9.166/13.843/4.677 ms
+
+
+
+LOOP
+mininet> sh ./p4cli s2 "table_modify MyIngress.myTunnel_exact MyIngress.myTunnel_forward 2 1"
+Done
+Modifying entry 2 for exact match table MyIngress.myTunnel_exact
+mininet> sh grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+logs/s1.txt:247
+logs/s2.txt:245
+mininet> h1 python3 send.py 10.80.0.3 "loop" --tunnel 3
+###[ Ethernet ]### 
+  dst       = ff:ff:ff:ff:ff:ff
+  src       = 00:00:00:00:00:01
+  type      = 0x1212
+###[ MyTunnel ]### 
+     proto_id  = 2048
+     dst_id    = 3
+     hop_limit = 10
+###[ IP ]### 
+        version   = 4
+        ihl       = 5
+        tos       = 0x0
+        len       = 32
+        id        = 1
+        flags     = 
+        frag      = 0
+        ttl       = 64
+        proto     = udp
+        chksum    = 0x6629
+        src       = 10.80.0.1
+        dst       = 10.80.0.3
+        \options   \
+###[ UDP ]### 
+           sport     = 4321
+           dport     = 4321
+           len       = 12
+           chksum    = 0xed90
+###[ Raw ]### 
+              load      = 'loop'
+
+Sent from h1-eth0.
+mininet> sh sleep 5; grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+logs/s1.txt:258
+logs/s2.txt:255
+mininet> sh sleep 5; grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+logs/s1.txt:258
+logs/s2.txt:255
+
+
+
+
