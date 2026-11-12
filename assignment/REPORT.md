@@ -21,7 +21,7 @@ Write each section in your own words, about your own runs. Quote the evidence fi
 - position: at the end of the tunnel header which is after bit<16> dst_id; so that the old field which is [ proto_id ][ dst_id ] stay in the same place. 
 - starting value: since the min value should be 2, i choose 10 so that it have some round of loop (expecting only 10 passes between the switches) before the packet drop. Then it also is not that long for 2 switches. 
 - where decremented: at each switch the packet reach, the decrement will happend in the ingress in the tunnel branch, before the myTunnel_exact lookup. This will check the current hop number. if number > 0 it will decrease by 1. if number = 0 the switch will drop the packet immediately. By doing this, the number wont be wrapping from 0 to 255 like IPv4 TTL before.
-- Other things that need to change: tunnel.p4 (header definition)=adding new field size in the header; after dst_id. tunnel.p4 (ingress)=the check for > 0, the drop, and the decrement. Then the hosts, send.py=write the starting number on the packet, default 10 and receive.py=print the hop limit that arrives so that they wonldn't disagree with the switches about the header length. Parser and deparser=no edit needed, because extract and emit use the whole header definition.
+- Other things that need to change: tunnel.p4 (header definition)=adding new field size in the header; after dst_id. tunnel.p4 (ingress)=the check for > 0, the drop, and the decrement. send.py=write the starting number on the packet, default 10 and receive.py=print the hop limit that arrives. Then the host need to be updated too so that they wonldn't disagree with the switches about the tunnel header length. Parser and deparser=no edit needed, because extract and emit use the whole header definition.
 <!-- Your header change and your pipeline change, and the reason for each choice:
      - the field's size, and where in the header you put it (and why there);
      - the starting value send.py uses, and how you chose it;
@@ -29,6 +29,12 @@ Write each section in your own words, about your own runs. Quote the evidence fi
      - what else had to change for every part of the path to agree (parser, deparser, hosts). -->
 
 ## 3. Implementation
+- tunnel.p4: added a 16-bit hop_limit field after dst_id in myTunnel_t header. 
+     In ingress, the tunneled packet checks hop_limit > 0, if true the hop_limit subtract 1, then look up myTunnel_exact; otherwise it drop.
+     The parse and deparse is not edited because extract and emit automatically pick up the new field since it use hdr.myTunnel in the code.
+- send.py: adding MyTunnel field with a ShortField hop_limit that has default 10 and a --hops option as a hops starter.
+- receive.py: adding the fields same as send.py, and it also prints the hop limit that arrives at the host.
+- Things the diff doesn't show: The tunnel header grow from 4 bytes to 6. Therefore, the host's field (send.py and receive.py) needs to be changed too in order to prevent from disagrement regarding where exaclty IPv4 header should start.
 
 <!-- Summarise what you changed in tunnel.p4, send.py and receive.py. The pull request shows
      the code itself: here, explain anything a reviewer might not see from the diff alone. -->
