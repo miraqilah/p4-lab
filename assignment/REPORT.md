@@ -1,11 +1,15 @@
 # Week 5 assignment — Put a limit on the tunnel
 
-Student ID (last 4 digits only): **NNNN**
+Student ID (last 4 digits only): 1780
 
 Write each section in your own words, about your own runs. Quote the evidence files in
 `assignment/evidence/` that support each point. Delete the instructions in `<!-- -->` as you go.
 
 ## 1. Analysis: the loop
+
+- How tunnel loop created: on s2 the entry table is modify from handle 2 to port 1 by using sh ./p4cli s2 "table_modify MyIngress.myTunnel_exact MyIngress.myTunnel_forward 2 1" command
+- Switch logs shown: the count is increase from 1422 to 1441 on s1 and 1421 to 1441 on s2
+- Check tunnel.p4 code: no it does not stop the IPv4 loop because there is no a single line of code that check if TTL=0... so basically if TTL reach 0 the loop keep looping because to TTL is set to 8-bit number which if 0-1 it will wraps around to 255 and it keep going to 0 again and again.
 
 <!-- How did you create the tunnel loop (which entry, on which switch, which commands)?
      What did the switch logs show over time, with numbers from loop-before.txt?
