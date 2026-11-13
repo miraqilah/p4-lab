@@ -53,9 +53,30 @@ Write each section in your own words, about your own runs. Quote the evidence fi
 
 a)THE PREDICTION
 - delivery: if using h1 python3 send.py... --tunnel 2... the delivery still happen meaning that packet form h1 will be send to h2 because both of the tunnel.p4 and tunnel_v1.p4 has applied tunnel header. Also, since s2 run the old program s2 will mistakenly parse byte 5 and 6 as the IPv4. Then IPv4 ping still works normally because it does not involded the tunnel header.
+
 - loop: s1 will do 10 passes and 1 arrival to drop since the s2 do not have instruction/code to reduce the hop limit and only check the tunnel id and forward it only.
 
 
+
+b)PROPOSE SAFE WAY
+- the ordering for new field should be placed at the back of the header, so that when applying mixing rollout both of the switches s1 and s2 can read the old field since it stay in the same place. 
+
+- The switch across the network can be program with the both old and new header first... Only when all switches are upgraded, change the senders (send.py) to use the new header. Then remove the old format.
+
+
+c) LOOP PROTECTION
+- check_paths(): It detects looping or missing routes in the routing tables before packets are sent, and works for all traffic types.
+
+- Limitations: It cannot detect problems that happen during runtime, such as changed routing entries or incorrect packet parsing.
+
+- Hop limit: It can detect loops that are happening during packet transmission, but only for tunnelled packets and switches that support it. For example, mixed.txt takes 21 passes instead of 11.
+
+
+
+d)cost on a hardware switch running at line rate
+- Extra bytes: Each packet that goes through the tunnel will become 2 bytes bigger because the header increases from 4 bytes to 6 bytes. If we use 8 bits instead, it would only increase by 1 byte.
+
+- Extra work per packet: The system needs to perform one comparison (to check whether the value is greater than 0) and one subtraction for each packet. However, these operations are simple and can usually be handled within one pipeline stage. So, the processing speed should remain the same as long as there is an available pipeline stage.
 
 <!-- a) The mixed rollout (mixed.txt): what did you predict before running s1 with your new
         program and s2 with tunnel_v1.p4? What actually happened to delivery, and to the loop?
@@ -68,6 +89,8 @@ a)THE PREDICTION
      d) What would this change cost on a hardware switch running at line rate? -->
 
 ## AI use
+- Im using Claude (Anthropic) to explained the lab and P4 concepts, explained the logs and code, suggested the design options and the P4/Python edits, and gave feedback on my report drafts.
+- I ran every command, chose the 16-bit size and starting value of 10 (claude suggested other number but i ask it whether i can use my own number so that claude consult me), tested everything, and wrote the report.
 
 <!-- This assignment is Level 3 (Open): AI use is allowed if you declare it. State which tools you
      used (or "None") and what each did — for example "ChatGPT explained the bmv2 log format;
