@@ -8,7 +8,9 @@ Write each section in your own words, about your own runs. Quote the evidence fi
 ## 1. Analysis: the loop
 
 - How tunnel loop created: on s2 the entry table is modify from handle 2 to port 1 by using sh ./p4cli s2 "table_modify MyIngress.myTunnel_exact MyIngress.myTunnel_forward 2 1" command
+
 - Switch logs shown: the count is increase from 1422 to 1441 on s1 and 1421 to 1441 on s2
+
 - Check tunnel.p4 code: no it does not stop the IPv4 loop because there is no a single line of code that check if TTL=0... so basically if TTL reach 0 the loop keep looping because to TTL is set to 8-bit number which if 0-1 it will wraps around to 255 and it keep going to 0 again and again.
 
 <!-- How did you create the tunnel loop (which entry, on which switch, which commands)?
@@ -18,9 +20,13 @@ Write each section in your own words, about your own runs. Quote the evidence fi
 
 ## 2. Design: the hop limit
 - field's size: 16 bits because it holds 0 to 65535, far more tha a 2-switch network needs. Then, since proto_id and dst_id has 16 bits i also wanted all the field in header to look uniform.
+
 - position: at the end of the tunnel header which is after bit<16> dst_id; so that the old field which is [ proto_id ][ dst_id ] stay in the same place. 
+
 - starting value: since the min value should be 2, i choose 10 so that it have some round of loop (expecting only 10 passes between the switches) before the packet drop. Then it also is not that long for 2 switches. 
+
 - where decremented: at each switch the packet reach, the decrement will happend in the ingress in the tunnel branch, before the myTunnel_exact lookup. This will check the current hop number. if number > 0 it will decrease by 1. if number = 0 the switch will drop the packet immediately. By doing this, the number wont be wrapping from 0 to 255 like IPv4 TTL before.
+
 - Other things that need to change: tunnel.p4 (header definition)=adding new field size in the header; after dst_id. tunnel.p4 (ingress)=the check for > 0, the drop, and the decrement. send.py=write the starting number on the packet, default 10 and receive.py=print the hop limit that arrives. Then the host need to be updated too so that they wonldn't disagree with the switches about the tunnel header length. Parser and deparser=no edit needed, because extract and emit use the whole header definition.
 <!-- Your header change and your pipeline change, and the reason for each choice:
      - the field's size, and where in the header you put it (and why there);
@@ -32,8 +38,11 @@ Write each section in your own words, about your own runs. Quote the evidence fi
 - tunnel.p4: added a 16-bit hop_limit field after dst_id in myTunnel_t header. 
      In ingress, the tunneled packet checks hop_limit > 0, if true the hop_limit subtract 1, then look up myTunnel_exact; otherwise it drop.
      The parse and deparse is not edited because extract and emit automatically pick up the new field since it use hdr.myTunnel in the code.
+
 - send.py: adding MyTunnel field with a ShortField hop_limit that has default 10 and a --hops option as a hops starter.
+
 - receive.py: adding the fields same as send.py, and it also prints the hop limit that arrives at the host.
+
 - Things the diff doesn't show: The tunnel header grow from 4 bytes to 6. Therefore, the host's field (send.py and receive.py) needs to be changed too in order to prevent from disagrement regarding where exaclty IPv4 header should start.
 
 <!-- Summarise what you changed in tunnel.p4, send.py and receive.py. The pull request shows
@@ -41,6 +50,7 @@ Write each section in your own words, about your own runs. Quote the evidence fi
 
 ## 4. Evidence: it works
 - delivery.txt: thunnel packet that send via --tunnel 2 and --tunnel 3 reach h2 and h3 respectively. Then, hop limit = 8 (10-2[s1,s2]). Then ping IPv4 still works because of else if (hdr.ipv4.isValid()) branch in ingress.
+
 - loop-after.txt: the loop is ended after 10 passes and 1 arrival that dropped , which is 236-242=6 passes from s1 and 235-240=5 passes from s2. Therefore this result match the design as it has 10 passes and the last hop=0 is dropped
 
 <!-- Show, with your evidence files:
@@ -73,7 +83,7 @@ c) LOOP PROTECTION
 
 
 
-d)cost on a hardware switch running at line rate
+d) COST ON HARDWARE 
 - Extra bytes: Each packet that goes through the tunnel will become 2 bytes bigger because the header increases from 4 bytes to 6 bytes. If we use 8 bits instead, it would only increase by 1 byte.
 
 - Extra work per packet: The system needs to perform one comparison (to check whether the value is greater than 0) and one subtraction for each packet. However, these operations are simple and can usually be handled within one pipeline stage. So, the processing speed should remain the same as long as there is an available pipeline stage.
@@ -89,8 +99,21 @@ d)cost on a hardware switch running at line rate
      d) What would this change cost on a hardware switch running at line rate? -->
 
 ## AI use
-- Im using Claude (Anthropic) to explained the lab and P4 concepts, explained the logs and code, suggested the design options and the P4/Python edits, and gave feedback on my report drafts.
-- I ran every command, chose the 16-bit size and starting value of 10 (claude suggested other number but i ask it whether i can use my own number so that claude consult me), tested everything, and wrote the report.
+I used Claude (Anthropic) throughout this assignment. It:
+- explained the lab and P4 concepts (parser, ingress, deparser, tables) and how to read the bmv2 logs;
+- suggested the hop-limit design options and gave me the code edits for tunnel.p4, send.py
+  and receive.py, which I applied and tested myself;
+- suggested options for the safe rollout in 5(b) and explained data plane vs control plane;
+- gave feedback on my report drafts and corrected mistakes, which I then rewrote in my own words.
+
+What I did myself: 
+- I ran every command and test, produced all the evidence files from my own network (10.80.0.x), and chose the design: a 16-bit hop_limit at the end of the header
+- a "> 0" check, and a starting value of 10 (Claude suggested 8, and I chose my own value and
+justified it). 
+- I wrote my own predictions before running the mixed rollout and did not change them afterwards. 
+- we write the answer using my own language and what actually i understand.
+- I checked the AI's answers against my own runs and logs. Where it didn't match, I question it to enhance my understanding.
+- I could not capture the bytes at h2 because tcpdump returned 0 packets, so that part of my explanation is a hypothesis.
 
 <!-- This assignment is Level 3 (Open): AI use is allowed if you declare it. State which tools you
      used (or "None") and what each did — for example "ChatGPT explained the bmv2 log format;
